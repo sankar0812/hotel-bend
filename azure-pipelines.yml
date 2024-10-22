@@ -1,0 +1,51 @@
+# Docker
+# Build a Docker image
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- main
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+  imageName: 'sankar0812/hotel-backend'  # Replace with your Docker Hub username and desired image name
+
+pool:
+  name: Default  # Set your default pool name here
+
+stages:
+- stage: Build
+  displayName: Build image
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: ubuntu-latest
+      name: Default  # Specify the agent name for this job
+    steps:
+    - task: Docker@2
+      displayName: Build an image
+      inputs:
+        containerRegistry: 'DockerHubConnection'
+        repository: '$(imageName)'
+        command: 'build'
+        Dockerfile: '**/Dockerfile'
+        tags: '$(tag)'
+        arguments: '--no-cache'
+
+  - job: Push
+    displayName: Push to Docker Hub
+    pool:
+      vmImage: ubuntu-latest
+      name: Default  # Specify the agent name for this job
+    steps:
+    - task: Docker@2
+      displayName: Push an image
+      inputs:
+        command: push
+        containerRegistry: 'DockerHubConnection'  # Azure DevOps service connection for Docker Hub
+        repository: $(imageName)
+        tags: |
+          $(tag)
